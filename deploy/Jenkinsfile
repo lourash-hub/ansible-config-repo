@@ -16,5 +16,26 @@ pipeline {
                 }
             }
         }
+        stage('Package') {
+            steps {
+                script {
+                    sh 'echo "Packaging App Stage.."'
+                }
+            }
+        }
+        stage('Destroy') {
+            steps {
+                script {
+                    sh 'echo "Destroy Stage.."'
+                }
+            }
+        }
+        stage('Clean up') {
+            steps {
+                script {
+                    sh 'echo "Clean up Stage.."'
+                }
+            }
+        }
     }
 }
