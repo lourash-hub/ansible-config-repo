@@ -4,6 +4,11 @@ pipeline {
     environment {
         ANSIBLE_CONFIG = "${WORKSPACE}/deploy/ansible.cfg"
     }
+
+    parameters {
+      string(name: 'inventory', defaultValue: 'dev',  description: 'This is the inventory file for the environment to deploy configuration')
+    }
+
     stages {
         stage("InitialCleanup") {
             steps {
@@ -27,7 +32,7 @@ pipeline {
             steps {
                 script {
                     sh 'echo ${WORKSPACE}'
-                    sh 'sed -i  "3 a roles_path = ${WORKSPACE}/roles" ${WORKSPACE}/deploy/ansible.cfg'
+                    sh 'sed -i "3 a roles_path=${WORKSPACE}/roles" ${WORKSPACE}/deploy/ansible.cfg'  
                 }
             }
         }
@@ -35,7 +40,7 @@ pipeline {
         stage("Run ansible playbook") {
             steps {
                 script {
-                    ansiblePlaybook become: true, colorized: true, credentialsId: 'private-key', disableHostKeyChecking: true, installation: 'ansible2', inventory: 'inventory/dev', playbook: 'playbooks/site.yml', vaultTmpPath: ''
+                    ansiblePlaybook become: true, colorized: true, credentialsId: 'private-key', disableHostKeyChecking: true, installation: 'ansible', inventory: 'inventory/${inventory}', playbook: 'playbooks/site.yml'
                 }
             }
         }
