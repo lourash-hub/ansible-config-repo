@@ -13,11 +13,11 @@ pipeline {
         stage("InitialCleanup") {
             steps {
                 script {
-                    sh 'chown -R jenkins:jenkins ${WORKSPACE}'
-                    sh 'chmod -R u+rwx ${WORKSPACE}'
-                }
-                dir("${WORKSPACE}") {
-                    deleteDir()
+                    sh 'sudo chown -R jenkins:jenkins ${WORKSPACE}'
+                    sh 'sudo chmod -R u+rwx ${WORKSPACE}'
+                    dir("${WORKSPACE}") {
+                        deleteDir()
+                    }
                 }
             }
         }
@@ -28,10 +28,10 @@ pipeline {
             }
         }
 
-        stage("Install Ansible Collections") {
+        stage("Install Ansible Roles and Collections") {
             steps {
                 script {
-                    // Install the required Ansible collections
+                    sh 'ansible-galaxy install geerlingguy.mysql -p ${WORKSPACE}/roles'
                     sh 'ansible-galaxy collection install community.mysql'
                 }
             }
@@ -40,20 +40,47 @@ pipeline {
         stage("Verify Ansible Configuration") {
             steps {
                 script {
-                    // Ensure ansible.cfg is configured correctly
                     sh '''
                         if [ ! -f "${WORKSPACE}/deploy/ansible.cfg" ]; then
                             echo "ansible.cfg not found!"
                             exit 1
                         fi
-
                         if ! grep -q "^collections_paths" ${WORKSPACE}/deploy/ansible.cfg; then
                             echo "Adding collections_paths to ansible.cfg"
                             sed -i "3 a collections_paths=~/.ansible/collections:/usr/share/ansible/collections" ${WORKSPACE}/deploy/ansible.cfg
+                        fi
+                        if ! grep -q "^roles_path" ${WORKSPACE}/deploy/ansible.cfg; then
+                            echo "Adding roles_path to ansible.cfg"
+                            sed -i "4 a roles_path=${WORKSPACE}/roles:/etc/ansible/roles" ${WORKSPACE}/deploy/ansible.cfg
                         fi
                     '''
                 }
             }
         }
 
-        stage("Verify Ansible Environment
+        stage("Verify Ansible Environment") {
+            steps {
+                script {
+                    sh 'env'
+                    sh 'ansible --version'
+                    sh 'ansible-config dump'
+                    sh 'ansible-galaxy collection list'
+                }
+            }
+        }
+
+        stage("Run ansible playbook") {
+            steps {
+                script {
+                    ansiblePlaybook become: true, colorized: true, credentialsId: 'private-key', disableHostKeyChecking: true, installation: 'ansible', inventory: "inventory/${params.inventory}", playbook: 'playbooks/site.yml'
+                }
+            }
+        }
+
+        stage("FinalCleanup") {
+            steps {
+                cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenNotBuilt: true, cleanWhenUnstable: true, deleteDirs: true)
+            }
+        }
+    }
+}
