@@ -39,7 +39,8 @@ pipeline {
                     // If ansible.cfg is found, append roles_path if not already present
                     sh '''
                         if [ -f "${WORKSPACE}/deploy/ansible.cfg" ]; then
-                            if ! grep -q "roles_path" ${WORKSPACE}/deploy/ansible.cfg; then
+                            if ! grep -q "^roles_path" ${WORKSPACE}/deploy/ansible.cfg; then
+                                echo "Adding roles_path to ansible.cfg"
                                 sed -i "3 a roles_path=${WORKSPACE}/roles:${WORKSPACE}/static-assignments/roles:/etc/ansible/roles" ${WORKSPACE}/deploy/ansible.cfg
                             else
                                 echo "roles_path already defined in ansible.cfg"
