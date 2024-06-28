@@ -37,29 +37,23 @@ pipeline {
             }
         }
 
-        stage("Verify Ansible Environment") {
+        stage("Verify Ansible Configuration") {
             steps {
                 script {
-                    // Print environment variables and paths for debugging
-                    sh 'env'
-                    sh 'ansible --version'
-                    sh 'ansible-config dump'
+                    // Ensure ansible.cfg is configured correctly
+                    sh '''
+                        if [ ! -f "${WORKSPACE}/deploy/ansible.cfg" ]; then
+                            echo "ansible.cfg not found!"
+                            exit 1
+                        fi
+
+                        if ! grep -q "^collections_paths" ${WORKSPACE}/deploy/ansible.cfg; then
+                            echo "Adding collections_paths to ansible.cfg"
+                            sed -i "3 a collections_paths=~/.ansible/collections:/usr/share/ansible/collections" ${WORKSPACE}/deploy/ansible.cfg
+                        fi
+                    '''
                 }
             }
         }
 
-        stage("Run ansible playbook") {
-            steps {
-                script {
-                    ansiblePlaybook become: true, colorized: true, credentialsId: 'private-key', disableHostKeyChecking: true, installation: 'ansible', inventory: "inventory/${params.inventory}", playbook: 'playbooks/site.yml'
-                }
-            }
-        }
-
-        stage("FinalCleanup") {
-            steps {
-                cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenNotBuilt: true, cleanWhenUnstable: true, deleteDirs: true)
-            }
-        }
-    }
-}
+        stage("Verify Ansible Environment
