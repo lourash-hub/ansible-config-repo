@@ -37,6 +37,17 @@ pipeline {
             }
         }
 
+        stage("Verify Ansible Environment") {
+            steps {
+                script {
+                    // Print environment variables and paths for debugging
+                    sh 'env'
+                    sh 'ansible --version'
+                    sh 'ansible-config dump'
+                }
+            }
+        }
+
         stage("Run ansible playbook") {
             steps {
                 script {
