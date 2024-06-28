@@ -13,7 +13,6 @@ pipeline {
         stage("InitialCleanup") {
             steps {
                 script {
-                    // Remove sudo commands to avoid password prompt
                     sh 'chown -R jenkins:jenkins ${WORKSPACE}'
                     sh 'chmod -R u+rwx ${WORKSPACE}'
                 }
@@ -26,31 +25,6 @@ pipeline {
         stage("Checkout SCM") {
             steps {
                 git branch: 'feature/jenkinspipeline-stages', url: 'https://github.com/lourash-hub/ansible-config-repo.git'
-            }
-        }
-
-        stage("Verify and Prepare ansible for execution") {
-            steps {
-                script {
-                    // Verify ansible.cfg presence
-                    sh 'echo "Verifying ansible.cfg presence..."'
-                    sh 'ls -l ${WORKSPACE}/deploy'
-                    
-                    // If ansible.cfg is found, append roles_path if not already present
-                    sh '''
-                        if [ -f "${WORKSPACE}/deploy/ansible.cfg" ]; then
-                            if ! grep -q "^roles_path" ${WORKSPACE}/deploy/ansible.cfg; then
-                                echo "Adding roles_path to ansible.cfg"
-                                sed -i "3 a roles_path=${WORKSPACE}/roles:${WORKSPACE}/static-assignments/roles:/etc/ansible/roles" ${WORKSPACE}/deploy/ansible.cfg
-                            else
-                                echo "roles_path already defined in ansible.cfg"
-                            fi
-                        else
-                            echo "ansible.cfg not found!"
-                            exit 1
-                        fi
-                    '''
-                }
             }
         }
 
