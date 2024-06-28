@@ -45,4 +45,10 @@ pipeline {
             }
         }
 
-        stage("Final
+        stage("FinalCleanup") {
+            steps {
+                cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenNotBuilt: true, cleanWhenUnstable: true, deleteDirs: true)
+            }
+        }
+    }
+}
