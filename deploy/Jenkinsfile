@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        ANSIBLE_CONFIG = "${WORKSPACE}/deploy/ansible-config"
+        ANSIBLE_CONFIG = "${WORKSPACE}/deploy/ansible.config"
     }
     stages {
         stage("InitialCleanup") {
