@@ -6,7 +6,7 @@ pipeline {
     }
 
     parameters {
-      string(name: 'inventory', defaultValue: 'dev',  description: 'This is the inventory file for the environment to deploy configuration')
+        string(name: 'inventory', defaultValue: 'dev', description: 'This is the inventory file for the environment to deploy configuration')
     }
 
     stages {
@@ -15,11 +15,11 @@ pipeline {
                 script {
                     sh 'sudo chown -R jenkins:jenkins ${WORKSPACE}'
                     sh 'sudo chmod -R u+rwx ${WORKSPACE}'
+                }
                 dir("${WORKSPACE}") {
                     deleteDir()
                 }
             }
-        
         }
 
         stage("Checkout SCM") {
@@ -28,11 +28,22 @@ pipeline {
             }
         }
 
-        stage("Prepare ansible for execution") {
+        stage("Verify and Prepare ansible for execution") {
             steps {
                 script {
-                    sh 'echo ${WORKSPACE}'
-                    sh 'sed -i "3 a roles_path=${WORKSPACE}/roles" ${WORKSPACE}/deploy/ansible.cfg'  
+                    // Verify ansible.cfg presence
+                    sh 'echo "Verifying ansible.cfg presence..."'
+                    sh 'ls -l ${WORKSPACE}/deploy'
+                    
+                    // If ansible.cfg is found, append roles_path
+                    sh '''
+                        if [ -f "${WORKSPACE}/deploy/ansible.cfg" ]; then
+                            sed -i "3 a roles_path=${WORKSPACE}/roles:${WORKSPACE}/static-assignments/roles:/etc/ansible/roles" ${WORKSPACE}/deploy/ansible.cfg
+                        else
+                            echo "ansible.cfg not found!"
+                            exit 1
+                        fi
+                    '''
                 }
             }
         }
@@ -40,7 +51,7 @@ pipeline {
         stage("Run ansible playbook") {
             steps {
                 script {
-                    ansiblePlaybook become: true, colorized: true, credentialsId: 'private-key', disableHostKeyChecking: true, installation: 'ansible', inventory: 'inventory/${inventory}', playbook: 'playbooks/site.yml'
+                    ansiblePlaybook become: true, colorized: true, credentialsId: 'private-key', disableHostKeyChecking: true, installation: 'ansible', inventory: "inventory/${params.inventory}", playbook: 'playbooks/site.yml'
                 }
             }
         }
@@ -48,7 +59,7 @@ pipeline {
         stage("FinalCleanup") {
             steps {
                 cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenNotBuilt: true, cleanWhenUnstable: true, deleteDirs: true)
-                }
             }
         }
     }
+}
