@@ -15,11 +15,11 @@ pipeline {
                 script {
                     sh 'sudo chown -R jenkins:jenkins ${WORKSPACE}'
                     sh 'sudo chmod -R u+rwx ${WORKSPACE}'
-                }
                 dir("${WORKSPACE}") {
                     deleteDir()
                 }
             }
+        
         }
 
         stage("Checkout SCM") {
